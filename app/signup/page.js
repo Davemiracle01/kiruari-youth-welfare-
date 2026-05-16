@@ -6,7 +6,6 @@ import { supabase } from '../../lib/supabase'
 export default function SignupPage() {
   const router = useRouter()
   const [form, setForm] = useState({ name: '', residence: '' })
-  const [photo, setPhoto] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -14,26 +13,14 @@ export default function SignupPage() {
     if (!form.name || !form.residence) return
     setLoading(true)
     setError('')
-
     try {
-      let photo_url = null
-
-      if (photo) {
-        const ext = photo.name.split('.').pop()
-        const fileName = `${Date.now()}.${ext}`
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, photo)
-        if (uploadError) throw uploadError
-        const { data } = supabase.storage.from('avatars').getPublicUrl(fileName)
-        photo_url = data.publicUrl
-      }
-
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('users')
-        .insert({ name: form.name, residence: form.residence, photo_url })
-
+        .insert({ name: form.name, residence: form.residence })
+        .select()
+        .single()
       if (insertError) throw insertError
+      localStorage.setItem('kiruare_user_id', data.id)
       router.push('/members')
     } catch (err) {
       setError(err.message)
@@ -53,17 +40,7 @@ export default function SignupPage() {
       </div>
 
       <div style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 20, padding: 28, width: '100%', maxWidth: 360 }}>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 18, margin: '0 0 20px', fontWeight: 700 }}>Create Profile</h2>
-
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-          <label style={{ cursor: 'pointer' }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', border: '2px dashed #2D6A4F', background: '#0D1B14', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {photo ? <img src={URL.createObjectURL(photo)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28 }}>📷</span>}
-            </div>
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setPhoto(e.target.files[0])} />
-          </label>
-          <span style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#52B788', marginTop: 8 }}>Upload photo</span>
-        </div>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 18, margin: '0 0 20px', fontWeight: 700 }}>Join the Community</h2>
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>FULL NAME</label>
@@ -71,7 +48,7 @@ export default function SignupPage() {
             style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 24 }}>
           <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>RESIDENCE</label>
           <input value={form.residence} onChange={e => setForm({ ...form, residence: e.target.value })} placeholder="e.g. Kiruare Village"
             style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
@@ -86,4 +63,4 @@ export default function SignupPage() {
       </div>
     </div>
   )
-      }
+            }
