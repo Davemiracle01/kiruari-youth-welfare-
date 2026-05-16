@@ -20,8 +20,26 @@ function Avatar({ name, size = 40 }) {
 }
 
 export default function AnnouncementsPage() {
+  const [user, setUser] = useState(null)
   const [announcements, setAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
+  const [content, setContent] = useState('')
+  const [posting, setPosting] = useState(false)
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const userId = localStorage.getItem('kiruare_user_id')
+        if (userId) {
+          const { data } = await supabase.from('users').select('*').eq('id', userId).single()
+          setUser(data)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchUser()
+  }, [])
 
   useEffect(() => {
     async function fetchAnnouncements() {
@@ -41,6 +59,27 @@ export default function AnnouncementsPage() {
     fetchAnnouncements()
   }, [])
 
+  async function handlePost() {
+    if (!content.trim() || !user) return
+    setPosting(true)
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .insert({ author_id: user.id, content })
+      if (error) throw error
+      setContent('')
+      const { data } = await supabase
+        .from('announcements')
+        .select('*, users(name)')
+        .order('created_at', { ascending: false })
+      setAnnouncements(data || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setPosting(false)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#0D1B14', maxWidth: 430, margin: '0 auto' }}>
       <div style={{ background: '#122018', borderBottom: '1px solid #2D6A4F33', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -49,6 +88,31 @@ export default function AnnouncementsPage() {
       </div>
 
       <div style={{ padding: '16px 20px', paddingBottom: 100 }}>
+        {user?.is_committee && (
+          <div style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 14, padding: 14, marginBottom: 20 }}>
+            <textarea
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="Post an announcement..."
+              style={{
+                width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px',
+                color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                minHeight: 80, resize: 'none'
+              }}
+            />
+            <button
+              onClick={handlePost}
+              disabled={!content.trim() || posting}
+              style={{
+                width: '100%', marginTop: 10, background: content.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10,
+                padding: '10px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, cursor: content.trim() ? 'pointer' : 'not-allowed'
+              }}
+            >
+              {posting ? 'Posting...' : 'Post'}
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <p style={{ color: '#52B788', textAlign: 'center', marginTop: 40 }}>Loading...</p>
         ) : (
@@ -78,4 +142,4 @@ export default function AnnouncementsPage() {
       <BottomNav />
     </div>
   )
-            }
+                }
