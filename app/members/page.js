@@ -55,15 +55,14 @@ export default function MembersPage() {
           <>
             {committee.length > 0 && (
               <>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>COMMITTEE</p>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>👮 COMMITTEE MEMBERS</p>
                 {committee.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: '1px solid #2D6A4F22' }}>
                     <Avatar name={m.name} size={48} />
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontWeight: 700, fontSize: 15 }}>{m.name}</p>
                       <p style={{ margin: '2px 0 0', fontFamily: "'Lato', sans-serif", color: '#52B788', fontSize: 12 }}>{m.residence}</p>
                     </div>
-                    <span style={{ marginLeft: 'auto', background: '#2D6A4F33', color: '#52B788', fontFamily: "'Lato', sans-serif", fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: '1px solid #2D6A4F55' }}>Admin</span>
                   </div>
                 ))}
               </>
@@ -71,11 +70,11 @@ export default function MembersPage() {
 
             {regular.length > 0 && (
               <>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '20px 0 12px' }}>MEMBERS</p>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '20px 0 12px' }}>👤 MEMBERS</p>
                 {regular.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: '1px solid #2D6A4F22' }}>
                     <Avatar name={m.name} size={48} />
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontWeight: 700, fontSize: 15 }}>{m.name}</p>
                       <p style={{ margin: '2px 0 0', fontFamily: "'Lato', sans-serif", color: '#52B788', fontSize: 12 }}>{m.residence}</p>
                     </div>
@@ -92,4 +91,4 @@ export default function MembersPage() {
       <BottomNav />
     </div>
   )
-    }
+}
