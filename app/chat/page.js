@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
@@ -8,18 +9,14 @@ function Avatar({ name, size = 40 }) {
   const colors = ['#2D6A4F', '#1B4332', '#40916C', '#52B788', '#095D7E', '#1A6B8A']
   const color = colors[name.charCodeAt(0) % colors.length]
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Sora', sans-serif", fontWeight: 700,
-      fontSize: size * 0.36, color: '#fff', flexShrink: 0,
-    }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: size * 0.36, color: '#fff', flexShrink: 0 }}>
       {initials}
     </div>
   )
 }
 
 export default function ChatPage() {
+  const router = useRouter()
   const [user, setUser] = useState(null)
   const [groupMessages, setGroupMessages] = useState([])
   const [contactList, setContactList] = useState([])
@@ -33,12 +30,20 @@ export default function ChatPage() {
     async function fetchUser() {
       try {
         const userId = localStorage.getItem('kiruare_user_id')
-        if (userId) {
-          const { data } = await supabase.from('users').select('*').eq('id', userId).single()
-          setUser(data)
+        if (!userId) {
+          router.push('/signup')
+          return
         }
+        const { data, error } = await supabase.from('users').select('*').eq('id', userId).single()
+        if (error || !data) {
+          localStorage.removeItem('kiruare_user_id')
+          router.push('/signup')
+          return
+        }
+        setUser(data)
       } catch (err) {
         console.error(err)
+        router.push('/signup')
       } finally {
         setLoading(false)
       }
@@ -65,10 +70,7 @@ export default function ChatPage() {
 
     async function fetchContacts() {
       try {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .neq('id', user.id)
+        const { data } = await supabase.from('users').select('*').neq('id', user.id)
         if (user.is_committee) {
           setContactList(data.filter(u => u.is_committee) || [])
         } else {
@@ -107,17 +109,10 @@ export default function ChatPage() {
     setSending(true)
     try {
       const table = user.is_committee ? 'announcements' : 'member_announcements'
-      const { error } = await supabase.from(table).insert({
-        author_id: user.id,
-        content: newMessage
-      })
+      const { error } = await supabase.from(table).insert({ author_id: user.id, content: newMessage })
       if (error) throw error
       setNewMessage('')
-      const { data } = await supabase
-        .from(table)
-        .select('*, users(id, name)')
-        .order('created_at', { ascending: false })
-        .limit(50)
+      const { data } = await supabase.from(table).select('*, users(id, name)').order('created_at', { ascending: false }).limit(50)
       setGroupMessages(data || [])
     } catch (err) {
       console.error(err)
@@ -130,11 +125,7 @@ export default function ChatPage() {
     if (!newMessage.trim() || !user || !selectedContact) return
     setSending(true)
     try {
-      const { error } = await supabase.from('messages').insert({
-        sender_id: user.id,
-        receiver_id: selectedContact.id,
-        content: newMessage
-      })
+      const { error } = await supabase.from('messages').insert({ sender_id: user.id, receiver_id: selectedContact.id, content: newMessage })
       if (error) throw error
       setNewMessage('')
       const { data } = await supabase
@@ -158,13 +149,7 @@ export default function ChatPage() {
     )
   }
 
-  if (!user) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0D1B14', display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: 430, margin: '0 auto' }}>
-        <p style={{ color: '#ff6b6b', fontFamily: "'Lato', sans-serif" }}>Not logged in</p>
-      </div>
-    )
-  }
+  if (!user) return null
 
   // DM View
   if (selectedContact) {
@@ -180,35 +165,10 @@ export default function ChatPage() {
 
         <div style={{ padding: '16px 20px', paddingBottom: 140, height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
           {dmMessages.map(msg => (
-            <div key={msg.id} style={{
-              display: 'flex',
-              justifyContent: msg.sender_id === user.id ? 'flex-end' : 'flex-start',
-              marginBottom: 12
-            }}>
-              <div style={{
-                background: msg.sender_id === user.id ? '#52B788' : '#122018',
-                border: msg.sender_id === user.id ? 'none' : '1px solid #2D6A4F33',
-                borderRadius: 12,
-                padding: '10px 14px',
-                maxWidth: '80%'
-              }}>
-                <p style={{
-                  fontFamily: "'Lato', sans-serif",
-                  color: msg.sender_id === user.id ? '#0D1B14' : '#E8F5E9',
-                  fontSize: 14,
-                  margin: 0,
-                  lineHeight: 1.5
-                }}>
-                  {msg.content}
-                </p>
-                <p style={{
-                  fontFamily: "'Lato', sans-serif",
-                  fontSize: 10,
-                  color: msg.sender_id === user.id ? 'rgba(0,0,0,0.6)' : '#52B788',
-                  margin: '4px 0 0'
-                }}>
-                  {new Date(msg.created_at).toLocaleTimeString()}
-                </p>
+            <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender_id === user.id ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
+              <div style={{ background: msg.sender_id === user.id ? '#52B788' : '#122018', border: msg.sender_id === user.id ? 'none' : '1px solid #2D6A4F33', borderRadius: 12, padding: '10px 14px', maxWidth: '80%' }}>
+                <p style={{ fontFamily: "'Lato', sans-serif", color: msg.sender_id === user.id ? '#0D1B14' : '#E8F5E9', fontSize: 14, margin: 0, lineHeight: 1.5 }}>{msg.content}</p>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: msg.sender_id === user.id ? 'rgba(0,0,0,0.6)' : '#52B788', margin: '4px 0 0' }}>{new Date(msg.created_at).toLocaleTimeString()}</p>
               </div>
             </div>
           ))}
@@ -216,24 +176,10 @@ export default function ChatPage() {
 
         <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430, background: '#122018', borderTop: '1px solid #2D6A4F33', padding: '12px 20px', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', gap: 10 }}>
-            <input
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              placeholder="Message..."
-              style={{
-                flex: 1, background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px 14px',
-                color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 14, outline: 'none'
-              }}
-              onKeyPress={e => e.key === 'Enter' && sendDM()}
-            />
-            <button
-              onClick={sendDM}
-              disabled={!newMessage.trim() || sending}
-              style={{
-                background: newMessage.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10, padding: '10px 16px',
-                color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
-              }}
-            >
+            <input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Message..." onKeyPress={e => e.key === 'Enter' && sendDM()}
+              style={{ flex: 1, background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 14, outline: 'none' }} />
+            <button onClick={sendDM} disabled={!newMessage.trim() || sending}
+              style={{ background: newMessage.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10, padding: '10px 16px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, cursor: newMessage.trim() ? 'pointer' : 'not-allowed' }}>
               →
             </button>
           </div>
@@ -250,31 +196,16 @@ export default function ChatPage() {
       </div>
 
       <div style={{ padding: '16px 20px', paddingBottom: 100 }}>
-        {/* Group Chat Section */}
         <div style={{ marginBottom: 24 }}>
           <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>
             {user.is_committee ? '👮 ADMIN GROUP' : '👥 MEMBER GROUP'}
           </p>
 
           <div style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 14, padding: 14, marginBottom: 16 }}>
-            <textarea
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              placeholder="Post a message..."
-              style={{
-                width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px',
-                color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box',
-                minHeight: 60, resize: 'none', marginBottom: 8
-              }}
-            />
-            <button
-              onClick={sendGroupMessage}
-              disabled={!newMessage.trim() || sending}
-              style={{
-                width: '100%', background: newMessage.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10,
-                padding: '10px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
-              }}
-            >
+            <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Post a message..."
+              style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box', minHeight: 60, resize: 'none', marginBottom: 8 }} />
+            <button onClick={sendGroupMessage} disabled={!newMessage.trim() || sending}
+              style={{ width: '100%', background: newMessage.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, cursor: newMessage.trim() ? 'pointer' : 'not-allowed' }}>
               {sending ? 'Sending...' : 'Send'}
             </button>
           </div>
@@ -289,19 +220,12 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Direct Messages Section */}
         <div>
           <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>DIRECT MESSAGES</p>
           {contactList.length > 0 ? (
             contactList.map(contact => (
-              <button
-                key={contact.id}
-                onClick={() => setSelectedContact(contact)}
-                style={{
-                  width: '100%', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0',
-                  borderBottom: '1px solid #2D6A4F22', cursor: 'pointer', textAlign: 'left'
-                }}
-              >
+              <button key={contact.id} onClick={() => setSelectedContact(contact)}
+                style={{ width: '100%', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #2D6A4F22', cursor: 'pointer', textAlign: 'left' }}>
                 <Avatar name={contact.name} size={40} />
                 <div>
                   <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 14, fontWeight: 700, margin: 0 }}>{contact.name}</p>
@@ -318,4 +242,5 @@ export default function ChatPage() {
       <BottomNav />
     </div>
   )
-    }
+            }
+            
