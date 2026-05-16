@@ -37,14 +37,14 @@ export default function SignupPage() {
     setLoading(true)
     setError('')
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .ilike('name', loginName.trim())
-        .ilike('residence', loginResidence.trim())
-        .single()
-      if (error || !data) throw new Error('No account found. Check your name and residence.')
-      localStorage.setItem('kiruare_user_id', data.id)
+      const res = await supabase.from('users').select('id, name, residence')
+      if (res.error) throw res.error
+      const match = res.data.find(u =>
+        u.name.trim().toLowerCase() === loginName.trim().toLowerCase() &&
+        u.residence.trim().toLowerCase() === loginResidence.trim().toLowerCase()
+      )
+      if (!match) throw new Error('No account found. Check your name and residence.')
+      localStorage.setItem('kiruare_user_id', match.id)
       router.push('/members')
     } catch (err) {
       setError(err.message)
