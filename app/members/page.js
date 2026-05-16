@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import BottomNav from '../components/BottomNav'
 
@@ -8,22 +9,24 @@ function Avatar({ name, size = 44 }) {
   const colors = ['#2D6A4F', '#1B4332', '#40916C', '#52B788', '#095D7E', '#1A6B8A']
   const color = colors[name.charCodeAt(0) % colors.length]
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Sora', sans-serif", fontWeight: 700,
-      fontSize: size * 0.36, color: '#fff', flexShrink: 0,
-    }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: size * 0.36, color: '#fff', flexShrink: 0 }}>
       {initials}
     </div>
   )
 }
 
 export default function MembersPage() {
+  const router = useRouter()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const userId = localStorage.getItem('kiruare_user_id')
+    if (!userId) {
+      router.push('/signup')
+      return
+    }
+
     async function fetchMembers() {
       try {
         const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false })
@@ -91,4 +94,5 @@ export default function MembersPage() {
       <BottomNav />
     </div>
   )
-}
+                  }
+                  
