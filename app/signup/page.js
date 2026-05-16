@@ -35,7 +35,7 @@ export default function SignupPage() {
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg,#2D6A4F,#52B788)', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: 32 }}>🌿</span>
         </div>
-        <h1 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 26, color: '#E8F5E9', margin: 0 }}>Kiruare Youth</h1>
+        <h1 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 26, color: '#E8F5E9', margin: 0 }}>Kiruari Youth</h1>
         <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', margin: '4px 0 0', fontSize: 14 }}>Welfare & Community Platform</p>
       </div>
 
@@ -44,13 +44,13 @@ export default function SignupPage() {
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>FULL NAME</label>
-          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. John Kamau"
+          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Tom wanjiku"
             style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ marginBottom: 24 }}>
           <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>RESIDENCE</label>
-          <input value={form.residence} onChange={e => setForm({ ...form, residence: e.target.value })} placeholder="e.g. Kiruare Village"
+          <input value={form.residence} onChange={e => setForm({ ...form, residence: e.target.value })} placeholder="e.g. Kiruari Village"
             style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
