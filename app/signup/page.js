@@ -6,7 +6,8 @@ import { supabase } from '../../lib/supabase'
 export default function SignupPage() {
   const router = useRouter()
   const [form, setForm] = useState({ name: '', residence: '' })
-  const [loginId, setLoginId] = useState('')
+  const [loginName, setLoginName] = useState('')
+  const [loginResidence, setLoginResidence] = useState('')
   const [mode, setMode] = useState('signup')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -32,16 +33,17 @@ export default function SignupPage() {
   }
 
   async function handleLogin() {
-    if (!loginId.trim()) return
+    if (!loginName.trim() || !loginResidence.trim()) return
     setLoading(true)
     setError('')
     try {
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('id')
-        .eq('id', loginId.trim())
+        .ilike('name', loginName.trim())
+        .ilike('residence', loginResidence.trim())
         .single()
-      if (fetchError || !data) throw new Error('ID not found. Check and try again.')
+      if (error || !data) throw new Error('No account found. Check your name and residence.')
       localStorage.setItem('kiruare_user_id', data.id)
       router.push('/members')
     } catch (err) {
@@ -61,7 +63,6 @@ export default function SignupPage() {
         <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', margin: '4px 0 0', fontSize: 14 }}>Welfare & Community Platform</p>
       </div>
 
-      {/* Tab switcher */}
       <div style={{ display: 'flex', background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 12, padding: 4, marginBottom: 20, width: '100%', maxWidth: 360 }}>
         <button onClick={() => { setMode('signup'); setError('') }} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, cursor: 'pointer', background: mode === 'signup' ? 'linear-gradient(135deg,#2D6A4F,#52B788)' : 'transparent', color: mode === 'signup' ? '#fff' : '#52B788', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 13 }}>
           New Member
@@ -72,7 +73,6 @@ export default function SignupPage() {
       </div>
 
       <div style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 20, padding: 28, width: '100%', maxWidth: 360 }}>
-
         {mode === 'signup' ? (
           <>
             <h2 style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 18, margin: '0 0 20px', fontWeight: 700 }}>Join the Community</h2>
@@ -83,16 +83,10 @@ export default function SignupPage() {
                 style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 24 }}>
               <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>RESIDENCE</label>
               <input value={form.residence} onChange={e => setForm({ ...form, residence: e.target.value })} placeholder="e.g. Kiruari Village"
                 style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-
-            <div style={{ background: '#0D1B14', border: '1px solid #52B78844', borderRadius: 10, padding: '10px 14px', marginBottom: 20 }}>
-              <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#52B788', margin: 0, lineHeight: 1.6 }}>
-                ⚠️ After joining, go to <strong>Profile</strong> and copy your <strong>Member ID</strong>. You will need it to log back in.
-              </p>
             </div>
 
             {error && <p style={{ color: '#ff6b6b', fontFamily: "'Lato', sans-serif", fontSize: 13, marginBottom: 12 }}>{error}</p>}
@@ -105,20 +99,24 @@ export default function SignupPage() {
         ) : (
           <>
             <h2 style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 18, margin: '0 0 8px', fontWeight: 700 }}>Welcome Back</h2>
-            <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', fontSize: 13, margin: '0 0 20px' }}>
-              Paste your Member ID from your Profile page to log in.
-            </p>
+            <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', fontSize: 13, margin: '0 0 20px' }}>Use the same name and residence you signed up with.</p>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>FULL NAME</label>
+              <input value={loginName} onChange={e => setLoginName(e.target.value)} placeholder="e.g. Tom Wanjiku"
+                style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
 
             <div style={{ marginBottom: 24 }}>
-              <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>MEMBER ID</label>
-              <input value={loginId} onChange={e => setLoginId(e.target.value)} placeholder="Paste your ID here"
-                style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ fontFamily: "'Lato', sans-serif", fontSize: 12, color: '#95C9A0', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: 1 }}>RESIDENCE</label>
+              <input value={loginResidence} onChange={e => setLoginResidence(e.target.value)} placeholder="e.g. Kiruari Village"
+                style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             {error && <p style={{ color: '#ff6b6b', fontFamily: "'Lato', sans-serif", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
-            <button onClick={handleLogin} disabled={loading || !loginId.trim()}
-              style={{ width: '100%', background: loginId.trim() ? 'linear-gradient(135deg,#2D6A4F,#52B788)' : '#1e3028', border: 'none', borderRadius: 12, padding: '14px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 15, cursor: loginId.trim() ? 'pointer' : 'not-allowed' }}>
+            <button onClick={handleLogin} disabled={loading || !loginName.trim() || !loginResidence.trim()}
+              style={{ width: '100%', background: loginName && loginResidence ? 'linear-gradient(135deg,#2D6A4F,#52B788)' : '#1e3028', border: 'none', borderRadius: 12, padding: '14px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 15, cursor: loginName && loginResidence ? 'pointer' : 'not-allowed' }}>
               {loading ? 'Checking...' : 'Log In →'}
             </button>
           </>
@@ -126,4 +124,4 @@ export default function SignupPage() {
       </div>
     </div>
   )
-            }
+          }
