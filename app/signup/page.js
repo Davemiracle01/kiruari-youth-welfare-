@@ -32,6 +32,36 @@ export default function SignupPage() {
     }
   }
 
+async function handleLogin() {
+  if (!loginName.trim() || !loginResidence.trim()) return
+  setLoading(true)
+  setError('')
+  try {
+    const res = await supabase.from('users').select('id, name, residence')
+    if (res.error) throw res.error
+    // Show what we got
+    if (!res.data || res.data.length === 0) {
+      throw new Error('Database returned 0 users. RLS may be blocking.')
+    }
+    const match = res.data.find(u =>
+      u.name.trim().toLowerCase() === loginName.trim().toLowerCase() &&
+      u.residence.trim().toLowerCase() === loginResidence.trim().toLowerCase()
+    )
+    if (!match) {
+      throw new Error(`No match found. Got ${res.data.length} users. First name: "${res.data[0].name}"`)
+    }
+    localStorage.setItem('kiruare_user_id', match.id)
+    router.push('/members')
+  } catch (err) {
+    setError(err.message)
+  } finally {
+    setLoading(false)
+  }
+}
+
+
+  
+
   async function handleLogin() {
     if (!loginName.trim() || !loginResidence.trim()) return
     setLoading(true)
