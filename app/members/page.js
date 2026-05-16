@@ -58,7 +58,7 @@ export default function MembersPage() {
           <>
             {committee.length > 0 && (
               <>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>👮 COMMITTEE MEMBERS</p>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>ADMINS</p>
                 {committee.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: '1px solid #2D6A4F22' }}>
                     <Avatar name={m.name} size={48} />
