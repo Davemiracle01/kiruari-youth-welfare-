@@ -13,79 +13,69 @@ export default function AskPage() {
   const [answerText, setAnswerText] = useState({})
   const [loading, setLoading] = useState(true)
   const [posting, setPosting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function loadQuestions(userId) {
+    const { data } = await supabase
+      .from('questions')
+      .select('id, question, answer, user_id, answered_by, created_at, users(name)')
+      .order('created_at', { ascending: false })
+    const list = data || []
+    setQuestions(list)
+    if (userId) {
+      const today = new Date().toISOString().split('T')[0]
+      const mine = list.find(q => q.user_id === userId && q.created_at.slice(0, 10) === today)
+      setMyQuestion(mine || null)
+    }
+  }
 
   useEffect(() => {
     async function init() {
       const userId = localStorage.getItem('kiruare_user_id')
       if (!userId) { router.push('/signup'); return }
-      const { data: userData } = await supabase.from('users').select('*').eq('id', userId).single()
-      if (!userData) { router.push('/signup'); return }
+      const { data: userData, error: userError } = await supabase
+        .from('users').select('*').eq('id', userId).single()
+      if (userError || !userData) { router.push('/signup'); return }
       setUser(userData)
-
-      const { data: allQuestions } = await supabase
-        .from('questions')
-        .select('*, users(name)')
-        .order('created_at', { ascending: false })
-      setQuestions(allQuestions || [])
-
-      if (!userData.is_committee) {
-        const today = new Date().toISOString().split('T')[0]
-        const mine = (allQuestions || []).find(q =>
-          q.user_id === userId && q.created_at.startsWith(today)
-        )
-        setMyQuestion(mine || null)
-      }
-
+      await loadQuestions(userId)
       setLoading(false)
     }
     init()
   }, [])
 
   async function handlePostQuestion() {
-    if (!newQuestion.trim()) return
+    if (!newQuestion.trim() || !user) return
     setPosting(true)
-    try {
-      const { data, error } = await supabase
-        .from('questions')
-        .insert({ user_id: user.id, question: newQuestion.trim() })
-        .select('*, users(name)')
-        .single()
-      if (error) throw error
-      setMyQuestion(data)
-      setQuestions(prev => [data, ...prev])
-      setNewQuestion('')
-    } catch (err) {
-      console.error(err)
-    } finally {
+    setError('')
+    const { error: insertError } = await supabase
+      .from('questions')
+      .insert([{ user_id: user.id, question: newQuestion.trim() }])
+    if (insertError) {
+      setError(insertError.message)
       setPosting(false)
+      return
     }
+    setNewQuestion('')
+    await loadQuestions(user.id)
+    setPosting(false)
   }
 
   async function handleDeleteQuestion(questionId) {
-    try {
-      await supabase.from('questions').delete().eq('id', questionId)
-      setMyQuestion(null)
-      setQuestions(prev => prev.filter(q => q.id !== questionId))
-    } catch (err) {
-      console.error(err)
-    }
+    await supabase.from('questions').delete().eq('id', questionId)
+    setMyQuestion(null)
+    setQuestions(prev => prev.filter(q => q.id !== questionId))
   }
 
   async function handleAnswer(questionId) {
     const answer = answerText[questionId]
-    if (!answer?.trim()) return
-    try {
-      const { data } = await supabase
-        .from('questions')
-        .update({ answer: answer.trim(), answered_by: user.id })
-        .eq('id', questionId)
-        .select('*, users(name)')
-        .single()
-      setQuestions(prev => prev.map(q => q.id === questionId ? data : q))
-      setAnswerText(prev => ({ ...prev, [questionId]: '' }))
-    } catch (err) {
-      console.error(err)
-    }
+    if (!answer?.trim() || !user) return
+    const { error: updateError } = await supabase
+      .from('questions')
+      .update({ answer: answer.trim(), answered_by: user.id })
+      .eq('id', questionId)
+    if (updateError) { console.error(updateError); return }
+    await loadQuestions(user?.id)
+    setAnswerText(prev => ({ ...prev, [questionId]: '' }))
   }
 
   if (loading) {
@@ -98,89 +88,129 @@ export default function AskPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0D1B14', maxWidth: 430, margin: '0 auto' }}>
+      {/* Header */}
       <div style={{ background: '#122018', borderBottom: '1px solid #2D6A4F33', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
         <h2 style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', margin: 0, fontSize: 18, fontWeight: 800 }}>Ask the Committee</h2>
-        <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', margin: '2px 0 0', fontSize: 12 }}>One question per day</p>
+        <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', margin: '2px 0 0', fontSize: 12 }}>
+          {user.is_committee ? 'Answer community questions' : 'One question per day'}
+        </p>
       </div>
 
       <div style={{ padding: '16px 20px', paddingBottom: 100 }}>
 
+        {/* Ask box — members only */}
         {!user.is_committee && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 28 }}>
             {myQuestion ? (
-              <div style={{ background: '#122018', border: '2px solid #52B78844', borderRadius: 14, padding: 16 }}>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1, margin: '0 0 8px' }}>YOUR QUESTION TODAY</p>
-                <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 14, fontWeight: 700, margin: '0 0 12px' }}>{myQuestion.question}</p>
+              <div style={{ background: '#122018', border: '2px solid #52B78855', borderRadius: 16, padding: 18 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 800, letterSpacing: 1.2, margin: 0 }}>YOUR QUESTION TODAY</p>
+                  <button onClick={() => handleDeleteQuestion(myQuestion.id)}
+                    style={{ background: 'none', border: '1px solid #ff6b6b44', borderRadius: 6, padding: '4px 10px', color: '#ff6b6b', fontFamily: "'Lato', sans-serif", fontSize: 11, cursor: 'pointer' }}>
+                    Delete
+                  </button>
+                </div>
+                <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 15, fontWeight: 700, margin: '0 0 14px', lineHeight: 1.5 }}>{myQuestion.question}</p>
                 {myQuestion.answer ? (
-                  <div style={{ background: '#0D1B14', borderRadius: 10, padding: 12, marginBottom: 12 }}>
-                    <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, margin: '0 0 6px' }}>ANSWER</p>
-                    <p style={{ fontFamily: "'Lato', sans-serif", color: '#C8E6C9', fontSize: 13, margin: 0 }}>{myQuestion.answer}</p>
+                  <div style={{ background: '#0D1B14', borderRadius: 12, padding: 14, borderLeft: '3px solid #52B788' }}>
+                    <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 800, letterSpacing: 1, margin: '0 0 8px' }}>✅ COMMITTEE ANSWERED</p>
+                    <p style={{ fontFamily: "'Lato', sans-serif", color: '#C8E6C9', fontSize: 14, margin: 0, lineHeight: 1.7 }}>{myQuestion.answer}</p>
                   </div>
                 ) : (
-                  <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 12, margin: '0 0 12px' }}>Waiting for an admin to answer...</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#52B788', animation: 'pulse 2s infinite' }} />
+                    <p style={{ fontFamily: "'Lato', sans-serif", color: '#52B788', fontSize: 12, margin: 0 }}>Waiting for committee response...</p>
+                  </div>
                 )}
-                <button onClick={() => handleDeleteQuestion(myQuestion.id)}
-                  style={{ background: 'none', border: '1px solid #ff6b6b44', borderRadius: 8, padding: '8px 14px', color: '#ff6b6b', fontFamily: "'Lato', sans-serif", fontSize: 12, cursor: 'pointer' }}>
-                  Delete & Ask New Question
-                </button>
               </div>
             ) : (
-              <div style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 14, padding: 16 }}>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1, margin: '0 0 10px' }}>ASK A QUESTION</p>
-                <textarea value={newQuestion} onChange={e => setNewQuestion(e.target.value)} placeholder="Type your question here..."
-                  style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box', minHeight: 80, resize: 'none', marginBottom: 10 }} />
-                <button onClick={handlePostQuestion} disabled={posting || !newQuestion.trim()}
-                  style={{ width: '100%', background: newQuestion.trim() ? 'linear-gradient(135deg,#2D6A4F,#52B788)' : '#1e3028', border: 'none', borderRadius: 10, padding: '12px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 14, cursor: newQuestion.trim() ? 'pointer' : 'not-allowed' }}>
-                  {posting ? 'Posting...' : 'Post Question'}
+              <div style={{ background: '#122018', border: '1px solid #2D6A4F44', borderRadius: 16, padding: 18 }}>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 800, letterSpacing: 1.2, margin: '0 0 12px' }}>ASK A QUESTION</p>
+                <textarea
+                  value={newQuestion}
+                  onChange={e => setNewQuestion(e.target.value)}
+                  placeholder="What would you like to ask the committee?"
+                  style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '12px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 14, outline: 'none', boxSizing: 'border-box', minHeight: 90, resize: 'none', marginBottom: 4, lineHeight: 1.6 }}
+                />
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#2D6A4F', margin: '0 0 12px' }}>{newQuestion.length}/500</p>
+                {error && <p style={{ color: '#ff6b6b', fontFamily: "'Lato', sans-serif", fontSize: 12, marginBottom: 10 }}>{error}</p>}
+                <button
+                  onClick={handlePostQuestion}
+                  disabled={posting || !newQuestion.trim()}
+                  style={{ width: '100%', background: newQuestion.trim() ? 'linear-gradient(135deg,#2D6A4F,#52B788)' : '#1e3028', border: 'none', borderRadius: 10, padding: '13px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 14, cursor: newQuestion.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+                  {posting ? 'Posting...' : 'Post Question →'}
                 </button>
               </div>
             )}
           </div>
         )}
 
-        <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>
-          {user.is_committee ? 'ALL QUESTIONS' : 'COMMUNITY QUESTIONS'}
+        {/* Questions list */}
+        <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 800, letterSpacing: 1.5, margin: '0 0 14px' }}>
+          {user.is_committee ? `ALL QUESTIONS (${questions.length})` : `COMMUNITY QUESTIONS (${questions.length})`}
         </p>
 
         {questions.length === 0 && (
-          <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 13, textAlign: 'center', marginTop: 40 }}>No questions yet</p>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <p style={{ fontSize: 32, margin: '0 0 10px' }}>🌿</p>
+            <p style={{ fontFamily: "'Sora', sans-serif", color: '#2D6A4F', fontSize: 14, fontWeight: 700, margin: 0 }}>No questions yet</p>
+            <p style={{ fontFamily: "'Lato', sans-serif", color: '#1B4332', fontSize: 12, margin: '4px 0 0' }}>Be the first to ask</p>
+          </div>
         )}
 
         {questions.map(q => (
-          <div key={q.id} style={{ background: '#122018', border: '1px solid #2D6A4F33', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, margin: 0 }}>{q.users?.name}</p>
-              <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#2D6A4F', margin: 0 }}>{new Date(q.created_at).toLocaleDateString()}</p>
+          <div key={q.id} style={{ background: '#122018', border: '1px solid #2D6A4F22', borderRadius: 16, padding: 16, marginBottom: 14, overflow: 'hidden' }}>
+
+            {/* Question header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2D6A4F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 11, color: '#fff' }}>
+                  {q.users?.name?.[0]?.toUpperCase() || '?'}
+                </div>
+                <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: '#E8F5E9', fontWeight: 700, margin: 0 }}>{q.users?.name || 'Member'}</p>
+              </div>
+              <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#2D6A4F', margin: 0 }}>
+                {new Date(q.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}
+              </p>
             </div>
 
-            <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 14, fontWeight: 700, margin: '0 0 10px' }}>{q.question}</p>
+            {/* Question text */}
+            <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', fontSize: 14, fontWeight: 700, margin: '0 0 12px', lineHeight: 1.5 }}>{q.question}</p>
 
+            {/* Answer or answer box */}
             {q.answer ? (
-              <div style={{ background: '#0D1B14', borderRadius: 10, padding: 12 }}>
-                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 700, margin: '0 0 6px', letterSpacing: 1 }}>ANSWERED BY COMMITTEE</p>
-                <p style={{ fontFamily: "'Lato', sans-serif", color: '#C8E6C9', fontSize: 13, margin: 0, lineHeight: 1.6 }}>{q.answer}</p>
+              <div style={{ background: '#0D1B14', borderRadius: 10, padding: 12, borderLeft: '3px solid #52B788' }}>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#52B788', fontWeight: 800, letterSpacing: 1, margin: '0 0 6px' }}>✅ COMMITTEE</p>
+                <p style={{ fontFamily: "'Lato', sans-serif", color: '#C8E6C9', fontSize: 13, margin: 0, lineHeight: 1.7 }}>{q.answer}</p>
               </div>
             ) : user.is_committee ? (
-              <div>
+              <div style={{ background: '#0D1B14', borderRadius: 10, padding: 12 }}>
+                <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, color: '#95C9A0', fontWeight: 800, letterSpacing: 1, margin: '0 0 8px' }}>YOUR ANSWER</p>
                 <textarea
                   value={answerText[q.id] || ''}
                   onChange={e => setAnswerText(prev => ({ ...prev, [q.id]: e.target.value }))}
                   placeholder="Type your answer..."
-                  style={{ width: '100%', background: '#0D1B14', border: '1px solid #2D6A4F55', borderRadius: 10, padding: '10px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box', minHeight: 60, resize: 'none', marginBottom: 8 }}
+                  style={{ width: '100%', background: '#122018', border: '1px solid #2D6A4F44', borderRadius: 8, padding: '10px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box', minHeight: 60, resize: 'none', marginBottom: 8, lineHeight: 1.6 }}
                 />
-                <button onClick={() => handleAnswer(q.id)} disabled={!answerText[q.id]?.trim()}
-                  style={{ width: '100%', background: answerText[q.id]?.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 10, padding: '10px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 13, cursor: answerText[q.id]?.trim() ? 'pointer' : 'not-allowed' }}>
+                <button
+                  onClick={() => handleAnswer(q.id)}
+                  disabled={!answerText[q.id]?.trim()}
+                  style={{ width: '100%', background: answerText[q.id]?.trim() ? '#52B788' : '#1e3028', border: 'none', borderRadius: 8, padding: '10px', color: '#fff', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 13, cursor: answerText[q.id]?.trim() ? 'pointer' : 'not-allowed' }}>
                   Submit Answer
                 </button>
               </div>
             ) : (
-              <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 12, margin: 0 }}>Awaiting answer...</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2D6A4F' }} />
+                <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 12, margin: 0 }}>Awaiting answer...</p>
+              </div>
             )}
 
+            {/* Admin delete */}
             {user.is_committee && (
               <button onClick={() => handleDeleteQuestion(q.id)}
-                style={{ background: 'none', border: 'none', color: '#ff6b6b55', fontFamily: "'Lato', sans-serif", fontSize: 11, cursor: 'pointer', marginTop: 8, padding: 0 }}>
-                Delete question
+                style={{ background: 'none', border: 'none', color: '#ff6b6b44', fontFamily: "'Lato', sans-serif", fontSize: 11, cursor: 'pointer', marginTop: 10, padding: 0 }}>
+                🗑 Delete question
               </button>
             )}
           </div>
@@ -190,4 +220,4 @@ export default function AskPage() {
       <BottomNav />
     </div>
   )
-                  }
+}
