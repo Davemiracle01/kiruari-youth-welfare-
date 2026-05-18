@@ -24,7 +24,7 @@ export default function AskPage() {
 
       const { data: allQuestions } = await supabase
         .from('questions')
-        .select('*, users(name), answered_by_user:users!questions_answered_by_fkey(name)')
+        .select('*, users(name)')
         .order('created_at', { ascending: false })
       setQuestions(allQuestions || [])
 
@@ -79,7 +79,7 @@ export default function AskPage() {
         .from('questions')
         .update({ answer: answer.trim(), answered_by: user.id })
         .eq('id', questionId)
-        .select('*, users(name), answered_by_user:users!questions_answered_by_fkey(name)')
+        .select('*, users(name)')
         .single()
       setQuestions(prev => prev.map(q => q.id === questionId ? data : q))
       setAnswerText(prev => ({ ...prev, [questionId]: '' }))
@@ -105,7 +105,6 @@ export default function AskPage() {
 
       <div style={{ padding: '16px 20px', paddingBottom: 100 }}>
 
-        {/* Member: post or show their question */}
         {!user.is_committee && (
           <div style={{ marginBottom: 24 }}>
             {myQuestion ? (
@@ -139,7 +138,6 @@ export default function AskPage() {
           </div>
         )}
 
-        {/* All questions */}
         <p style={{ fontFamily: "'Lato', sans-serif", fontSize: 11, color: '#52B788', fontWeight: 700, letterSpacing: 1.2, margin: '0 0 12px' }}>
           {user.is_committee ? 'ALL QUESTIONS' : 'COMMUNITY QUESTIONS'}
         </p>
@@ -179,7 +177,6 @@ export default function AskPage() {
               <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 12, margin: 0 }}>Awaiting answer...</p>
             )}
 
-            {/* Admin can delete any question */}
             {user.is_committee && (
               <button onClick={() => handleDeleteQuestion(q.id)}
                 style={{ background: 'none', border: 'none', color: '#ff6b6b55', fontFamily: "'Lato', sans-serif", fontSize: 11, cursor: 'pointer', marginTop: 8, padding: 0 }}>
@@ -193,4 +190,4 @@ export default function AskPage() {
       <BottomNav />
     </div>
   )
-}
+                  }
