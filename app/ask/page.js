@@ -15,28 +15,15 @@ export default function AskPage() {
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
 
-async function handlePostQuestion() {
-  if (!newQuestion.trim() || !user) return
-  setPosting(true)
-  setError('')
-  const { error: insertError } = await supabase
-    .from('questions')
-    .insert([{ user_id: user.id, question: newQuestion.trim() }])
-  if (insertError) {
-    alert('Error: ' + insertError.message) 
-    setError(insertError.message)
-    setPosting(false)
-    return
-  }
-  ...
-}
-
-  
   async function loadQuestions(userId) {
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('questions')
       .select('id, question, answer, user_id, answered_by, created_at, users(name)')
       .order('created_at', { ascending: false })
+    if (fetchError) {
+      console.error('Failed to load questions:', fetchError.message)
+      return
+    }
     const list = data || []
     setQuestions(list)
     if (userId) {
