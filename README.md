@@ -103,3 +103,7 @@ cd kiruari-youth-welfare-
 
 # Run locally
 Open index.html in your browser
+```
+made with ❤️ by Dave 
+
+
