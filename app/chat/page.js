@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
@@ -15,18 +16,15 @@ function Avatar({ name, size = 40, online = false }) {
       <div style={{
         width: size, height: size, borderRadius: '50%', background: bg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: "'Sora', sans-serif", fontWeight: 700,
-        fontSize: size * 0.36, color: '#fff',
-        boxShadow: `0 0 0 2px #0D1B14, 0 2px 8px rgba(0,0,0,0.4)`
+        fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: size * 0.36,
+        color: '#fff', boxShadow: `0 0 0 2px #0D1B14, 0 2px 8px rgba(0,0,0,0.4)`
       }}>
         {initials}
       </div>
       {online && (
         <span style={{
-          position: 'absolute', bottom: 1, right: 1,
-          width: size * 0.27, height: size * 0.27,
-          background: '#52B788', borderRadius: '50%',
-          border: '2px solid #0D1B14'
+          position: 'absolute', bottom: 1, right: 1, width: size * 0.27, height: size * 0.27,
+          background: '#52B788', borderRadius: '50%', border: '2px solid #0D1B14'
         }} />
       )}
     </div>
@@ -35,7 +33,9 @@ function Avatar({ name, size = 40, online = false }) {
 
 /* ─── Timestamp ─────────────────────────────────────────────── */
 function TimeLabel({ ts }) {
+  if (!ts) return null
   const d = new Date(ts)
+  if (isNaN(d.getTime())) return null
   return (
     <span style={{ fontFamily: "'Lato', sans-serif", fontSize: 10, opacity: 0.55 }}>
       {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -61,18 +61,12 @@ const S = {
   inputBar: { position: 'fixed', bottom: 62, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430, background: '#0f1f17', borderTop: '1px solid rgba(45,106,79,0.25)', padding: '10px 16px', boxSizing: 'border-box', zIndex: 20 },
   input: { flex: 1, background: '#0D1B14', border: '1px solid rgba(45,106,79,0.4)', borderRadius: 12, padding: '10px 14px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 14, outline: 'none', transition: 'border-color 0.2s' },
   sendBtn: (active) => ({ background: active ? '#52B788' : '#1a2e22', border: 'none', borderRadius: 12, padding: '10px 16px', color: active ? '#0D1B14' : '#2D6A4F', fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 18, cursor: active ? 'pointer' : 'not-allowed', transition: 'all 0.2s', lineHeight: 1 }),
-  bubble: (mine) => ({
-    background: mine ? '#52B788' : '#122018',
-    border: mine ? 'none' : '1px solid rgba(45,106,79,0.3)',
-    borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-    padding: '9px 13px', maxWidth: '78%'
-  }),
+  bubble: (mine) => ({ background: mine ? '#52B788' : '#122018', border: mine ? 'none' : '1px solid rgba(45,106,79,0.3)', borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: '9px 13px', maxWidth: '78%' }),
   bubbleText: (mine) => ({ fontFamily: "'Lato', sans-serif", color: mine ? '#0D1B14' : '#E8F5E9', fontSize: 14, margin: 0, lineHeight: 1.5, wordBreak: 'break-word' }),
   emptyState: { fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 13, textAlign: 'center', paddingTop: 32 },
   postCard: { background: '#122018', border: '1px solid rgba(45,106,79,0.25)', borderRadius: 12, padding: '12px 14px', marginBottom: 8 },
   postName: { fontFamily: "'Sora', sans-serif", color: '#52B788', fontSize: 12, fontWeight: 700, margin: '0 0 4px' },
   postContent: { fontFamily: "'Lato', sans-serif", color: '#C8E6C9', fontSize: 13, margin: 0, lineHeight: 1.5 },
-  postTime: { fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 10, margin: '5px 0 0' },
   textarea: { width: '100%', background: '#0D1B14', border: '1px solid rgba(45,106,79,0.4)', borderRadius: 10, padding: '10px 12px', color: '#E8F5E9', fontFamily: "'Lato', sans-serif", fontSize: 13, outline: 'none', boxSizing: 'border-box', minHeight: 56, resize: 'none', marginBottom: 8, lineHeight: 1.5 },
   groupSendBtn: (active) => ({ width: '100%', background: active ? '#52B788' : '#1a2e22', border: 'none', borderRadius: 10, padding: '10px', color: active ? '#0D1B14' : '#2D6A4F', fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 13, cursor: active ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }),
   unreadDot: { width: 8, height: 8, background: '#52B788', borderRadius: '50%', marginLeft: 'auto', flexShrink: 0 },
@@ -83,11 +77,10 @@ const S = {
   replyName: { fontFamily: "'Sora', sans-serif", color: '#40916C', fontSize: 10, fontWeight: 700, margin: '0 0 2px' },
   replyText: { fontFamily: "'Lato', sans-serif", color: '#A5C8A8', fontSize: 12, margin: 0, lineHeight: 1.4 },
   memberNotice: { fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 11, textAlign: 'center', padding: '8px 0 0', fontStyle: 'italic' },
+  errorBanner: { background: '#4A1515', color: '#ff8383', padding: '8px 12px', borderRadius: 8, fontSize: 12, marginBottom: 8, fontFamily: "'Lato', sans-serif" }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MAIN PAGE
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════ MAIN PAGE ═══════════════════════════════════════════════════════════════ */
 export default function ChatPage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -98,10 +91,13 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const [unreadMap, setUnreadMap] = useState({})
-  const [replyDrafts, setReplyDrafts] = useState({})   // { [postId]: string }
-  const [repliesMap, setRepliesMap] = useState({})      // { [postId]: Reply[] }
-  const [sendingReply, setSendingReply] = useState({})  // { [postId]: bool }
+  const [replyDrafts, setReplyDrafts] = useState({})
+  const [repliesMap, setRepliesMap] = useState({})
+  const [sendingReply, setSendingReply] = useState({})
+
+  const pendingPostTempIdRef = useRef(null)
   const dmScrollRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -109,9 +105,14 @@ export default function ChatPage() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) throw sessionError
+
         let userId = session?.user?.id || localStorage.getItem('kiruare_user_id')
-        if (!userId) { router.push('/signup'); return }
+        if (!userId) {
+          router.push('/signup')
+          return
+        }
 
         const { data, error } = await supabase.from('users').select('*').eq('id', userId).single()
         if (error || !data) {
@@ -128,13 +129,11 @@ export default function ChatPage() {
       }
     }
     fetchUser()
-  }, [])
+  }, [router])
 
   /* ── Group messages + contacts ─────────────────────────────── */
   useEffect(() => {
     if (!user) return
-
-    // Everyone reads from 'announcements' (admin-only posts)
     const readTable = 'announcements'
 
     async function fetchGroupMessages() {
@@ -143,20 +142,18 @@ export default function ChatPage() {
         .select('*, users(id, name)')
         .order('created_at', { ascending: false })
         .limit(50)
-      if (!error) setGroupMessages(data || [])
+      if (!error && data) setGroupMessages(data)
     }
 
     async function fetchContacts() {
-      if (!user.is_committee) return // Members cannot DM — skip
+      if (!user.is_committee) return
       const { data, error } = await supabase.from('users').select('*').neq('id', user.id)
-      if (error || !data) return
-      setContactList(data) // Admins can DM anyone
+      if (!error && data) setContactList(data)
     }
 
     fetchGroupMessages()
     fetchContacts()
 
-    // ── Real-time: group channel ───────────────────────────────
     const groupChannel = supabase
       .channel(`group-${readTable}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: readTable }, async (payload) => {
@@ -165,18 +162,29 @@ export default function ChatPage() {
           .select('*, users(id, name)')
           .eq('id', payload.new.id)
           .single()
-        if (data) setGroupMessages(prev => [data, ...prev])
+        if (data) {
+          setGroupMessages(prev => {
+            if (prev.some(m => m.id === data.id)) return prev
+            const tempId = pendingPostTempIdRef.current
+            const withoutTemp = tempId ? prev.filter(m => m.id !== tempId) : prev
+            return [data, ...withoutTemp]
+          })
+          pendingPostTempIdRef.current = null
+        }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: readTable }, (payload) => {
         setGroupMessages(prev => prev.filter(m => m.id !== payload.old.id))
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(groupChannel) }
+    return () => {
+      supabase.removeChannel(groupChannel)
+    }
   }, [user])
 
   /* ── Fetch replies for a post ──────────────────────────────── */
   async function fetchReplies(postId) {
+    if (!postId) return
     const { data, error } = await supabase
       .from('post_replies')
       .select('*, users(id, name)')
@@ -189,7 +197,7 @@ export default function ChatPage() {
 
   /* ── DM fetch + real-time ──────────────────────────────────── */
   useEffect(() => {
-    if (!selectedContact || !user) return
+    if (!selectedContact || !user || !user.is_committee) return
 
     async function fetchDMs() {
       const { data, error } = await supabase
@@ -197,14 +205,18 @@ export default function ChatPage() {
         .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true })
-      if (!error) {
-        setDmMessages(data || [])
+      if (!error && data) {
+        setDmMessages(data)
         setTimeout(() => scrollToBottom(dmScrollRef), 50)
       }
     }
 
     fetchDMs()
-    setUnreadMap(prev => { const n = { ...prev }; delete n[selectedContact.id]; return n })
+    setUnreadMap(prev => {
+      const n = { ...prev }
+      delete n[selectedContact.id]
+      return n
+    })
 
     const dmChannel = supabase
       .channel(`dm-${user.id}-${selectedContact.id}`)
@@ -216,7 +228,8 @@ export default function ChatPage() {
         )
         if (isRelevant) {
           setDmMessages(prev => {
-            const withoutTemp = prev.filter(m => !m._temp || m.content !== msg.content || m.sender_id !== msg.sender_id)
+            if (prev.some(m => m.id === msg.id)) return prev
+            const withoutTemp = prev.filter(m => !m._temp || m.content !== msg.content)
             return [...withoutTemp, msg]
           })
           setTimeout(() => scrollToBottom(dmScrollRef), 50)
@@ -242,77 +255,138 @@ export default function ChatPage() {
 
   /* ── Send group message — ADMINS ONLY ─────────────────────── */
   async function sendGroupMessage() {
-    if (!user.is_committee) return // Hard guard
+    if (!user || !user.is_committee) {
+      setErrorMsg('Only committee members can post announcements.')
+      return
+    }
     const content = newMessage.trim()
     if (!content || sending) return
+
+    setErrorMsg('')
     setSending(true)
 
-    const temp = { id: `temp-${Date.now()}`, content, author_id: user.id, created_at: new Date().toISOString(), users: { id: user.id, name: user.name }, _temp: true }
+    const tempId = `temp-${Date.now()}`
+    pendingPostTempIdRef.current = tempId
+
+    const temp = {
+      id: tempId,
+      content,
+      author_id: user.id,
+      created_at: new Date().toISOString(),
+      users: { id: user.id, name: user.name },
+      _temp: true
+    }
+
     setGroupMessages(prev => [temp, ...prev])
     setNewMessage('')
 
     try {
-      const { error } = await supabase.from('announcements').insert({ author_id: user.id, content })
-      if (error) {
-        setGroupMessages(prev => prev.filter(m => m.id !== temp.id))
-        setNewMessage(content)
-        console.error('Send error:', error)
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert({ author_id: user.id, content })
+        .select('*, users(id, name)')
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setGroupMessages(prev => {
+          const tempIdToClear = pendingPostTempIdRef.current
+          return prev.map(m => (m.id === tempIdToClear || m.id === tempId ? data : m))
+        })
       }
+    } catch (err) {
+      console.error('Send error:', err)
+      setGroupMessages(prev => prev.filter(m => m.id !== tempId))
+      setNewMessage(content)
+      setErrorMsg('Failed to post announcement. Please try again.')
     } finally {
+      pendingPostTempIdRef.current = null
       setSending(false)
     }
   }
 
   /* ── Delete post — ADMINS ONLY ─────────────────────────────── */
   async function deletePost(postId) {
-    if (!user.is_committee) return // Hard guard
+    if (!user || !user.is_committee) return
     const { error } = await supabase.from('announcements').delete().eq('id', postId)
     if (!error) {
       setGroupMessages(prev => prev.filter(m => m.id !== postId))
     } else {
       console.error('Delete error:', error)
+      setErrorMsg('Failed to delete announcement.')
     }
   }
 
   /* ── Send reply — MEMBERS ONLY ─────────────────────────────── */
   async function sendReply(postId) {
-    if (user.is_committee) return // Hard guard
+    if (!user || user.is_committee) {
+      setErrorMsg('Committee accounts reply via admin tools.')
+      return
+    }
     const content = (replyDrafts[postId] || '').trim()
     if (!content || sendingReply[postId]) return
+
     setSendingReply(prev => ({ ...prev, [postId]: true }))
+    setErrorMsg('')
 
-    const { error } = await supabase
-      .from('post_replies')
-      .insert({ post_id: postId, author_id: user.id, content })
+    try {
+      const { error } = await supabase
+        .from('post_replies')
+        .insert({ post_id: postId, author_id: user.id, content })
 
-    if (!error) {
+      if (error) throw error
+
       setReplyDrafts(prev => ({ ...prev, [postId]: '' }))
-      fetchReplies(postId)
-    } else {
-      console.error('Reply error:', error)
+      await fetchReplies(postId)
+    } catch (err) {
+      console.error('Reply error:', err)
+      setErrorMsg('Failed to send reply.')
+    } finally {
+      setSendingReply(prev => ({ ...prev, [postId]: false }))
     }
-    setSendingReply(prev => ({ ...prev, [postId]: false }))
   }
 
   /* ── Send DM — ADMINS ONLY ─────────────────────────────────── */
   async function sendDM() {
-    if (!user.is_committee) return // Hard guard
+    if (!user || !user.is_committee || !selectedContact) return
     const content = newMessage.trim()
-    if (!content || !selectedContact || sending) return
-    setSending(true)
+    if (!content || sending) return
 
-    const temp = { id: `temp-${Date.now()}`, content, sender_id: user.id, receiver_id: selectedContact.id, created_at: new Date().toISOString(), _temp: true }
+    setSending(true)
+    setErrorMsg('')
+
+    const tempId = `temp-${Date.now()}`
+    const temp = {
+      id: tempId,
+      content,
+      sender_id: user.id,
+      receiver_id: selectedContact.id,
+      created_at: new Date().toISOString(),
+      _temp: true
+    }
+
     setDmMessages(prev => [...prev, temp])
     setNewMessage('')
     setTimeout(() => scrollToBottom(dmScrollRef), 30)
 
     try {
-      const { error } = await supabase.from('messages').insert({ sender_id: user.id, receiver_id: selectedContact.id, content })
-      if (error) {
-        setDmMessages(prev => prev.filter(m => m.id !== temp.id))
-        setNewMessage(content)
-        console.error('DM send error:', error)
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({ sender_id: user.id, receiver_id: selectedContact.id, content })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setDmMessages(prev => prev.map(m => m.id === tempId ? data : m))
       }
+    } catch (err) {
+      console.error('DM send error:', err)
+      setDmMessages(prev => prev.filter(m => m.id !== tempId))
+      setNewMessage(content)
+      setErrorMsg('Failed to send direct message.')
     } finally {
       setSending(false)
     }
@@ -320,7 +394,10 @@ export default function ChatPage() {
 
   /* ── Key handler ───────────────────────────────────────────── */
   const handleKeyDown = useCallback((e, fn) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fn() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      fn()
+    }
   }, [])
 
   /* ── Loading ───────────────────────────────────────────────── */
@@ -337,21 +414,16 @@ export default function ChatPage() {
   }
 
   if (!user) return null
-
   const isAdmin = user.is_committee
 
-  /* ══════════════════════════════════════════════════════════════
-     DM VIEW — admins only
-  ══════════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════════ DM VIEW — admins only ══════════════════════════════════════════════════════════════ */
   if (selectedContact && isAdmin) {
     return (
       <div style={S.root}>
         {/* Header */}
         <div style={S.header}>
           <div style={S.headerRow}>
-            <button style={S.backBtn} onClick={() => setSelectedContact(null)} aria-label="Back">
-              ←
-            </button>
+            <button style={S.backBtn} onClick={() => setSelectedContact(null)} aria-label="Back"> ← </button>
             <Avatar name={selectedContact.name} size={36} />
             <div>
               <p style={{ fontFamily: "'Sora', sans-serif", color: '#E8F5E9', margin: 0, fontWeight: 700, fontSize: 15 }}>{selectedContact.name}</p>
@@ -364,6 +436,7 @@ export default function ChatPage() {
 
         {/* Messages */}
         <div ref={dmScrollRef} style={{ flex: 1, padding: '16px 16px 140px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {errorMsg && <div style={S.errorBanner}>{errorMsg}</div>}
           {dmMessages.length === 0 && (
             <p style={S.emptyState}>No messages yet. Say hello! 👋</p>
           )}
@@ -371,7 +444,7 @@ export default function ChatPage() {
             const mine = msg.sender_id === user.id
             const prevMine = i > 0 && dmMessages[i - 1].sender_id === msg.sender_id
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginTop: prevMine ? 2 : 10 }}>
+              <div key={msg.id || i} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginTop: prevMine ? 2 : 10 }}>
                 <div style={S.bubble(mine)}>
                   <p style={S.bubbleText(mine)}>{msg.content}</p>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 3, gap: 4, alignItems: 'center' }}>
@@ -388,17 +461,22 @@ export default function ChatPage() {
         {/* Input */}
         <div style={S.inputBar}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <input
-              ref={inputRef}
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              onKeyDown={e => handleKeyDown(e, sendDM)}
-              placeholder="Message…"
-              style={S.input}
-              autoComplete="off"
+            <input 
+              ref={inputRef} 
+              value={newMessage} 
+              onChange={e => setNewMessage(e.target.value)} 
+              onKeyDown={e => handleKeyDown(e, sendDM)} 
+              placeholder="Message…" 
+              style={S.input} 
+              autoComplete="off" 
             />
-            <button onClick={sendDM} disabled={!newMessage.trim() || sending} style={S.sendBtn(!!newMessage.trim() && !sending)} aria-label="Send">
-              ↑
+            <button 
+              onClick={sendDM} 
+              disabled={!newMessage.trim() || sending} 
+              style={S.sendBtn(!!newMessage.trim() && !sending)} 
+              aria-label="Send"
+            > 
+              ↑ 
             </button>
           </div>
         </div>
@@ -406,9 +484,7 @@ export default function ChatPage() {
     )
   }
 
-  /* ══════════════════════════════════════════════════════════════
-     MAIN VIEW
-  ══════════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════════ MAIN VIEW ══════════════════════════════════════════════════════════════ */
   return (
     <div style={S.root}>
       {/* Header */}
@@ -417,6 +493,7 @@ export default function ChatPage() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 100px' }}>
+        {errorMsg && <div style={S.errorBanner}>{errorMsg}</div>}
 
         {/* ── Announcements Section ────────────────────────────── */}
         <div style={{ marginBottom: 28 }}>
@@ -427,14 +504,18 @@ export default function ChatPage() {
           {/* Compose — ADMINS ONLY */}
           {isAdmin && (
             <div style={{ background: '#122018', border: '1px solid rgba(45,106,79,0.25)', borderRadius: 14, padding: '12px 14px', marginBottom: 14 }}>
-              <textarea
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => handleKeyDown(e, sendGroupMessage)}
-                placeholder="Post an announcement…"
-                style={S.textarea}
+              <textarea 
+                value={newMessage} 
+                onChange={e => setNewMessage(e.target.value)} 
+                onKeyDown={e => handleKeyDown(e, sendGroupMessage)} 
+                placeholder="Post an announcement…" 
+                style={S.textarea} 
               />
-              <button onClick={sendGroupMessage} disabled={!newMessage.trim() || sending} style={S.groupSendBtn(!!newMessage.trim() && !sending)}>
+              <button 
+                onClick={sendGroupMessage} 
+                disabled={!newMessage.trim() || sending} 
+                style={S.groupSendBtn(!!newMessage.trim() && !sending)}
+              >
                 {sending ? 'Sending…' : 'Post'}
               </button>
             </div>
@@ -458,11 +539,7 @@ export default function ChatPage() {
                       <TimeLabel ts={msg.created_at} />
                       {/* Delete — ADMINS ONLY */}
                       {isAdmin && (
-                        <button
-                          style={S.deleteBtn}
-                          onClick={() => deletePost(msg.id)}
-                          title="Delete announcement"
-                        >
+                        <button style={S.deleteBtn} onClick={() => deletePost(msg.id)} title="Delete announcement">
                           🗑
                         </button>
                       )}
@@ -487,18 +564,23 @@ export default function ChatPage() {
                   {/* Reply input — MEMBERS ONLY */}
                   {!isAdmin && (
                     <div style={{ marginTop: 10 }}>
-                      <textarea
-                        value={replyDraft}
-                        onChange={e => setReplyDrafts(prev => ({ ...prev, [msg.id]: e.target.value }))}
-                        onFocus={() => { if (!repliesMap[msg.id]) fetchReplies(msg.id) }}
-                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(msg.id) } }}
-                        placeholder="Write a reply…"
-                        rows={2}
-                        style={S.replyInput}
+                      <textarea 
+                        value={replyDraft} 
+                        onChange={e => setReplyDrafts(prev => ({ ...prev, [msg.id]: e.target.value }))} 
+                        onFocus={() => { if (!repliesMap[msg.id]) fetchReplies(msg.id) }} 
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            sendReply(msg.id)
+                          }
+                        }} 
+                        placeholder="Write a reply…" 
+                        rows={2} 
+                        style={S.replyInput} 
                       />
-                      <button
-                        onClick={() => sendReply(msg.id)}
-                        disabled={!replyDraft.trim() || sendingReply[msg.id]}
+                      <button 
+                        onClick={() => sendReply(msg.id)} 
+                        disabled={!replyDraft.trim() || sendingReply[msg.id]} 
                         style={S.replyBtn(!!replyDraft.trim() && !sendingReply[msg.id])}
                       >
                         {sendingReply[msg.id] ? 'Sending…' : 'Reply'}
@@ -508,10 +590,7 @@ export default function ChatPage() {
 
                   {/* Admins: load replies on demand */}
                   {isAdmin && !repliesMap[msg.id] && (
-                    <button
-                      style={{ ...S.deleteBtn, color: '#2D6A4F', marginTop: 6 }}
-                      onClick={() => fetchReplies(msg.id)}
-                    >
+                    <button style={{ ...S.deleteBtn, color: '#2D6A4F', marginTop: 6 }} onClick={() => fetchReplies(msg.id)}>
                       View replies
                     </button>
                   )}
@@ -529,11 +608,7 @@ export default function ChatPage() {
               <p style={S.emptyState}>No contacts available</p>
             ) : (
               contactList.map(contact => (
-                <button
-                  key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
-                  style={S.contactBtn}
-                >
+                <button key={contact.id} onClick={() => setSelectedContact(contact)} style={S.contactBtn}>
                   <Avatar name={contact.name} size={42} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={S.contactName}>{contact.name}</p>
@@ -553,7 +628,6 @@ export default function ChatPage() {
         {!isAdmin && (
           <p style={S.memberNotice}>Your replies are visible to admins.</p>
         )}
-
       </div>
 
       <BottomNav />
