@@ -22,33 +22,7 @@ A simple website To promote welfare and badminton sport in Kiruari village
 
 ---
 
-# 🌍 About The Project
-
-**Kiruari Youth Welfare** is a community-driven initiative focused on:
-
-- 🏸 Promoting badminton talent in Kiruari village  
-- 🤝 Encouraging unity and teamwork among youth  
-- 🌱 Supporting youth development and welfare  
-- 💡 Creating opportunities through sports and community programs  
-- ❤️ Building a stronger and healthier society  
-
-This website serves as a digital platform to connect the community, showcase activities, and inspire young people through sports and welfare programs.
-
----
-
-# ✨ Features
-
-## 🏸 Sports Promotion
-- Badminton awareness
-- Tournament updates
-- Team activities
-- Youth training programs
-
-## 🤝 Community Welfare
-- Youth empowerment
-- Community support initiatives
-- Event announcements
-- Volunteer opportunities
+ 
 
 ## 📱 Responsive Design
 - Mobile friendly
