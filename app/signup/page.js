@@ -131,8 +131,15 @@ export default function LoginPage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-4px); }
         }
+        @keyframes smileReveal {
+          to { clip-path: inset(0 0% 0 0); }
+        }
         .kiruari-card { animation: fadeUp 0.5s ease; }
         .kiruari-logo { animation: gentleFloat 4s ease-in-out infinite; }
+        .kiruari-smile {
+          clip-path: inset(0 100% 0 0);
+          animation: smileReveal 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+        }
         .kiruari-input:focus {
           border-color: #52B788 !important;
           box-shadow: 0 0 0 3px #52B78833;
@@ -146,6 +153,10 @@ export default function LoginPage() {
         .kiruari-btn:not(:disabled):active {
           transform: scale(0.98);
         }
+        @media (prefers-reduced-motion: reduce) {
+          .kiruari-logo, .kiruari-smile, .kiruari-card { animation: none !important; }
+          .kiruari-smile { clip-path: none !important; }
+        }
       `}</style>
 
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
@@ -157,6 +168,25 @@ export default function LoginPage() {
         }}>
           <span style={{ fontSize: 34 }}>🌿</span>
         </div>
+
+        <svg
+          viewBox="0 0 260 160"
+          style={{ width: 96, height: 'auto', margin: '0 auto 14px', display: 'block', transform: 'rotate(-1.2deg)' }}
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="kiruariSmileGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#2D6A4F" />
+              <stop offset="100%" stopColor="#52B788" />
+            </linearGradient>
+          </defs>
+          <path
+            className="kiruari-smile"
+            d="M 38 58 Q 128 118 222 54 Q 130 154 38 58 Z"
+            fill="url(#kiruariSmileGrad)"
+          />
+        </svg>
+
         <h1 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 26, color: '#E8F5E9', margin: 0 }}>
           Karibu, Kiruari Youth!
         </h1>
@@ -285,5 +315,4 @@ export default function LoginPage() {
       </p>
     </div>
   )
-  }
-              
+}
