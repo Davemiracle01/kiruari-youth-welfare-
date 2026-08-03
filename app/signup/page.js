@@ -281,7 +281,7 @@ export default function LoginPage() {
       </div>
 
       <p style={{ fontFamily: "'Lato', sans-serif", color: '#2D6A4F', fontSize: 12, marginTop: 24, textAlign: 'center' }}>
-        Kiruari Youth Welfare · Built with 🌿 for our community
+        Kiruari Youth Welfare ·
       </p>
     </div>
   )
