@@ -161,7 +161,7 @@ export default function LoginPage() {
           Karibu, Kiruari Youth!
         </h1>
         <p style={{ fontFamily: "'Lato', sans-serif", color: '#95C9A0', margin: '8px 0 0', fontSize: 14, maxWidth: 280, lineHeight: 1.5 }}>
-          A warm corner of home for our village's youth — connect, support each other, and grow together.
+          A warm corner of home — connect, support each other, and grow together.
         </p>
       </div>
 
