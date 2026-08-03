@@ -188,7 +188,7 @@ export default function LoginPage() {
         </svg>
 
         <h1 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 26, color: '#E8F5E9', margin: 0 }}>
-          Karibu, Kiruari Youth!
+          Karibu
         </h1>
         <p style={{ fontFamily: "'Lato', sans-serif", color: '#95C9A0', margin: '8px 0 0', fontSize: 14, maxWidth: 280, lineHeight: 1.5 }}>
           A warm corner of home — connect, support each other, and grow together.
