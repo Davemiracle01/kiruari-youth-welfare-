@@ -89,9 +89,6 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const [replyDrafts, setReplyDrafts] = useState({})
-  const [repliesMap, setRepliesMap] = useState({})
-  const [sendingReply, setSendingReply] = useState({})
 
   const pendingPostTempIdRef = useRef(null)
 
@@ -169,19 +166,6 @@ export default function ChatPage() {
     }
   }, [user])
 
-  /* ── Fetch replies for a post ──────────────────────────────── */
-  async function fetchReplies(postId) {
-    if (!postId) return
-    const { data, error } = await supabase
-      .from('post_replies')
-      .select('*, users(id, name)')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true })
-    if (!error) {
-      setRepliesMap(prev => ({ ...prev, [postId]: data || [] }))
-    }
-  }
-
   /* ── Send group message — ADMINS ONLY ─────────────────────── */
   async function sendGroupMessage() {
     if (!user || !user.is_committee) {
@@ -244,35 +228,6 @@ export default function ChatPage() {
     } else {
       console.error('Delete error:', error)
       setErrorMsg('Failed to delete announcement.')
-    }
-  }
-
-  /* ── Send reply — MEMBERS ONLY ─────────────────────────────── */
-  async function sendReply(postId) {
-    if (!user || user.is_committee) {
-      setErrorMsg('Committee accounts reply via admin tools.')
-      return
-    }
-    const content = (replyDrafts[postId] || '').trim()
-    if (!content || sendingReply[postId]) return
-
-    setSendingReply(prev => ({ ...prev, [postId]: true }))
-    setErrorMsg('')
-
-    try {
-      const { error } = await supabase
-        .from('post_replies')
-        .insert({ post_id: postId, author_id: user.id, content })
-
-      if (error) throw error
-
-      setReplyDrafts(prev => ({ ...prev, [postId]: '' }))
-      await fetchReplies(postId)
-    } catch (err) {
-      console.error('Reply error:', err)
-      setErrorMsg('Failed to send reply.')
-    } finally {
-      setSendingReply(prev => ({ ...prev, [postId]: false }))
     }
   }
 
@@ -343,8 +298,6 @@ export default function ChatPage() {
               <p style={S.emptyState}>No announcements yet.</p>
             )}
             {groupMessages.slice(0, 10).map(msg => {
-              const replies = repliesMap[msg.id] || []
-              const replyDraft = replyDrafts[msg.id] || ''
               return (
                 <div key={msg.id} style={S.postCard}>
                   {/* Post header */}
@@ -364,52 +317,6 @@ export default function ChatPage() {
 
                   {/* Post content */}
                   <p style={S.postContent}>{msg.content}</p>
-
-                  {/* Existing replies */}
-                  {replies.length > 0 && (
-                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(45,106,79,0.15)' }}>
-                      {replies.map(reply => (
-                        <div key={reply.id} style={S.replyBubble}>
-                          <p style={S.replyName}>{reply.users?.name || 'Unknown'}</p>
-                          <p style={S.replyText}>{reply.content}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Reply input — MEMBERS ONLY */}
-                  {!isAdmin && (
-                    <div style={{ marginTop: 10 }}>
-                      <textarea 
-                        value={replyDraft} 
-                        onChange={e => setReplyDrafts(prev => ({ ...prev, [msg.id]: e.target.value }))} 
-                        onFocus={() => { if (!repliesMap[msg.id]) fetchReplies(msg.id) }} 
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            sendReply(msg.id)
-                          }
-                        }} 
-                        placeholder="Write a reply…" 
-                        rows={2} 
-                        style={S.replyInput} 
-                      />
-                      <button 
-                        onClick={() => sendReply(msg.id)} 
-                        disabled={!replyDraft.trim() || sendingReply[msg.id]} 
-                        style={S.replyBtn(!!replyDraft.trim() && !sendingReply[msg.id])}
-                      >
-                        {sendingReply[msg.id] ? 'Sending…' : 'Reply'}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Admins: load replies on demand */}
-                  {isAdmin && !repliesMap[msg.id] && (
-                    <button style={{ ...S.deleteBtn, color: '#2D6A4F', marginTop: 6 }} onClick={() => fetchReplies(msg.id)}>
-                      View replies
-                    </button>
-                  )}
                 </div>
               )
             })}
@@ -417,12 +324,10 @@ export default function ChatPage() {
         </div>
 
         {/* Members: subtle footer note */}
-        {!isAdmin && (
-          <p style={S.memberNotice}>Your replies are visible to admins.</p>
-        )}
       </div>
 
       <BottomNav />
     </div>
   )
-}
+    }
+    
