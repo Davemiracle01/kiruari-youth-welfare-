@@ -4,8 +4,8 @@ import { usePathname } from 'next/navigation'
 
 const NAV = [
   { key: 'members', label: 'Members', icon: '👥', href: '/members' },
-  { key: 'activities', label: 'Activities', icon: '📋', href: '/activities' },
-  { key: 'chat', label: 'Chat', icon: '💬', href: '/chat' },
+  { key: 'activities', label: 'Activities', icon: '🪃', href: '/activities' },
+  { key: 'chat', label: 'Chat', icon: '🗣️', href: '/announcements' },
   { key: 'profile', label: 'Profile', icon: '👤', href: '/profile' },
 ]
 
